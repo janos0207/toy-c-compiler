@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef enum {
     TK_RESERVED,
@@ -130,6 +131,7 @@ Node* new_node_num(int val) {
 
 Node* expr();
 Node* mul();
+Node* unary();
 Node* primary();
 
 // expr = mul ("+" mul | "-" mul)*
@@ -146,18 +148,25 @@ Node* expr() {
     }
 }
 
-// mul = primary ("*" primary | "/" primary)*
+// mul = unary ("*" unary | "/" unary)*
 Node* mul() {
-    Node* node = primary();
+    Node* node = unary();
 
     for (;;) {
         if (consume('*'))
-            node = new_node(ND_MUL, node, primary());
+            node = new_node(ND_MUL, node, unary());
         else if (consume('/'))
-            node = new_node(ND_DIV, node, primary());
+            node = new_node(ND_DIV, node, unary());
         else
             return node;
     }
+}
+
+// unary = ("+" | "-")? primary
+Node* unary() {
+    if (consume('+')) return primary();
+    if (consume('-')) return new_node(ND_SUB, new_node_num(0), primary());
+    return primary();
 }
 
 // primary = num | "(" expr ")"
