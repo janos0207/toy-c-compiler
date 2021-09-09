@@ -16,10 +16,21 @@ bool consume(char* op) {
     return true;
 }
 
+Node* consume_ident() {
+    if (token->kind != TK_IDENT) {
+        return NULL;
+    }
+    Node* node = calloc(1, sizeof(Node));
+    node->kind = ND_LVAR;
+    node->offset = (token->str[0] - 'a' + 1) * 8;
+    token = token->next;
+    return node;
+}
+
 void expect(char* op) {
     if (token->kind != TK_RESERVED || strlen(op) != token->len ||
         memcmp(token->str, op, token->len)) {
-        error_at(token->str, "The token is not '%c'", op);
+        error_at(token->str, "The token is not '%s'", op);
     }
     token = token->next;
 }
@@ -50,7 +61,12 @@ Node* new_node_num(int val) {
     return node;
 }
 
+Node* new_node_lvar() {}
+
+void program();
+Node* stmt();
 Node* expr();
+Node* assign();
 Node* equality();
 Node* relational();
 Node* add();
@@ -58,13 +74,36 @@ Node* mul();
 Node* unary();
 Node* primary();
 
-Node* parse(Token* t) {
+void parse(Token* t) {
     token = t;
-    return expr();
+    program();
 }
 
-// expr = equality
-Node* expr() { return equality(); }
+// program = stmt*
+void program() {
+    int i = 0;
+    // Node* code[100];
+    while (!at_eof()) code[i++] = stmt();
+    code[i] = NULL;
+    // return code;
+}
+
+// stmt = expr ";"
+Node* stmt() {
+    Node* node = expr();
+    expect(";");
+    return node;
+}
+
+// expr = assign
+Node* expr() { return assign(); }
+
+// assign = equality ("=" assign)?
+Node* assign() {
+    Node* node = equality();
+    if (consume("=")) node = new_node(ND_ASSIGN, node, assign());
+    return node;
+}
 
 // equality = relational ("==" relational | "!=" relational)*
 Node* equality() {
@@ -133,11 +172,16 @@ Node* unary() {
     return primary();
 }
 
-// primary = num | "(" expr ")"
+// primary = num | ident | "(" expr ")"
 Node* primary() {
     if (consume("(")) {
         Node* node = expr();
         expect(")");
+        return node;
+    }
+
+    Node* node = consume_ident();
+    if (node) {
         return node;
     }
 
