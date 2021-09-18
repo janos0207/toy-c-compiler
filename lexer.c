@@ -22,6 +22,14 @@ void error_at(char* loc, char* fmt, ...) {
     exit(1);
 }
 
+bool is_ident_fst(char c) {
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_';
+}
+
+bool is_ident_except_fst(char c) {
+    return is_ident_fst(c) || ('0' <= c && c <= '9');
+}
+
 Token* new_token(TokenKind kind, Token* cur, char* str, int len) {
     Token* tok = calloc(1, sizeof(Token));
     tok->kind = kind;
@@ -63,8 +71,12 @@ Token* tokenize(char* p) {
             cur->len = p - q;
             continue;
         }
-        if ('a' <= *p && *p <= 'z') {
-            cur = new_token(TK_IDENT, cur, p++, 1);
+        if (is_ident_fst(*p)) {
+            char* start = p;
+            do {
+                p++;
+            } while (is_ident_except_fst(*p));
+            cur = new_token(TK_IDENT, cur, start, p - start);
             continue;
         }
         error_at(p, "Could not tokenize");

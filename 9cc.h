@@ -19,6 +19,15 @@ struct Token {
     int len;    // token length
 };
 
+typedef struct LVar LVar;
+
+struct LVar {
+    LVar* next;
+    char* name;
+    int len;
+    int offset;
+};
+
 typedef enum {
     ND_ADD,     // +
     ND_SUB,     // -
@@ -39,12 +48,14 @@ struct Node {
     NodeKind kind;
     Node* lhs;
     Node* rhs;
-    int val;     // only for ND_NUM case
-    int offset;  // only for ND_LVAR case
+    int val;    // only for ND_NUM case
+    LVar* var;  // only for ND_LVAR case
 };
 
 Token* tokenize(char* p);
 void parse(Token* t);
-void gen(Node* node);
+void codegen();
 
 Node* code[100];
+LVar* f_locals;
+int stack_size;

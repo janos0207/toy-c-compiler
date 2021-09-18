@@ -6,6 +6,25 @@
 #include "9cc.h"
 
 static Token* token;
+LVar* locals;
+
+LVar* find_var() {
+    for (LVar* var = locals; var; var = var->next) {
+        if (strlen(var->name) == token->len &&
+            !strncmp(token->str, var->name, token->len)) {
+            return var;
+        }
+    }
+    return NULL;
+}
+
+LVar* new_lvar(char* name) {
+    LVar* var = calloc(1, sizeof(LVar));
+    var->name = name;
+    var->next = locals;
+    locals = var;
+    return var;
+}
 
 bool consume(char* op) {
     if (token->kind != TK_RESERVED || strlen(op) != token->len ||
@@ -20,9 +39,14 @@ Node* consume_ident() {
     if (token->kind != TK_IDENT) {
         return NULL;
     }
+    LVar* var = find_var();
+    if (!var) {
+        var = new_lvar(strndup(token->str, token->len));
+    }
+
     Node* node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR;
-    node->offset = (token->str[0] - 'a' + 1) * 8;
+    node->var = var;
     token = token->next;
     return node;
 }
@@ -82,10 +106,9 @@ void parse(Token* t) {
 // program = stmt*
 void program() {
     int i = 0;
-    // Node* code[100];
     while (!at_eof()) code[i++] = stmt();
     code[i] = NULL;
-    // return code;
+    f_locals = locals;
 }
 
 // stmt = expr ";"

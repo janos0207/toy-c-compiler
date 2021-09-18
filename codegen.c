@@ -7,11 +7,23 @@ void gen_lval(Node* node) {
         error("the left side value of assignment is not a variable");
 
     printf("  mov rax, rbp\n");
-    printf("  sub rax, %d\n", node->offset);
+    printf("  sub rax, %d\n", node->var->offset);
     printf("  push rax\n");
 }
 
-void gen(Node* node) {
+// Round up `n` to the nearest multiple of `align`
+int align_to(int n, int align) { return (n + align - 1) / align * align; }
+
+void assign_lvar_offsets() {
+    int offset = 0;
+    for (LVar* var = f_locals; var; var = var->next) {
+        offset += 8;
+        var->offset = offset;
+    }
+    stack_size = align_to(offset, 16);
+}
+
+void gen_stmt(Node* node) {
     switch (node->kind) {
         case ND_NUM:
             printf("  push %d\n", node->val);
@@ -24,7 +36,7 @@ void gen(Node* node) {
             return;
         case ND_ASSIGN:
             gen_lval(node->lhs);
-            gen(node->rhs);
+            gen_stmt(node->rhs);
             printf("  pop rdi\n");
             printf("  pop rax\n");
             printf("  mov [rax], rdi\n");
@@ -32,8 +44,8 @@ void gen(Node* node) {
             return;
     }
 
-    gen(node->lhs);
-    gen(node->rhs);
+    gen_stmt(node->lhs);
+    gen_stmt(node->rhs);
 
     printf("  pop rdi\n");
     printf("  pop rax\n");
@@ -77,4 +89,28 @@ void gen(Node* node) {
             break;
     }
     printf("  push rax\n");
+}
+
+void codegen() {
+    printf(".intel_syntax noprefix\n");
+
+    assign_lvar_offsets();
+
+    printf(".global main\n");
+    printf("main:\n");
+
+    // prologue: allocate the space of 26 variables
+    printf("  push rbp\n");
+    printf("  mov rbp, rsp\n");
+    printf("  sub rsp, %d\n", stack_size);
+
+    for (int i = 0; code[i]; i++) {
+        gen_stmt(code[i]);
+        printf("  pop rax\n");
+    }
+
+    // epilogue: return the value of the last expression at RAX
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
+    printf("  ret\n");
 }
