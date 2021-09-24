@@ -27,8 +27,10 @@ LVar* new_lvar(char* name) {
 }
 
 bool consume(char* op) {
-    if (token->kind != TK_RESERVED || strlen(op) != token->len ||
-        memcmp(token->str, op, token->len)) {
+    if (token->kind != TK_RESERVED && token->kind != TK_KEYWORD) {
+        return false;
+    }
+    if (strlen(op) != token->len || memcmp(token->str, op, token->len)) {
         return false;
     }
     token = token->next;
@@ -112,8 +114,15 @@ void program() {
 }
 
 // stmt = expr ";"
+//      | "return" expr ";"
 Node* stmt() {
-    Node* node = expr();
+    Node* node;
+    if (consume("return")) {
+        node = new_node(ND_RETURN, expr(), NULL);
+        expect(";");
+        return node;
+    }
+    node = expr();
     expect(";");
     return node;
 }

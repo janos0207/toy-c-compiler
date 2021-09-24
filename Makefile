@@ -7,6 +7,9 @@ OBJS=$(SRCS:.c=.o)
 
 $(OBJS): 9cc.h
 
+debug:
+		$(CC) -o 9cc -O0 $(OBJS) $(LDFLAGS)
+
 test: 9cc
 		./test.sh
 

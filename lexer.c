@@ -43,6 +43,16 @@ bool startswith(char* str, char* prefix) {
     return memcmp(str, prefix, strlen(prefix)) == 0;
 }
 
+bool equal(Token* tok, char* op) {
+    return tok->len == strlen(op) && memcmp(tok->str, op, tok->len) == 0;
+}
+
+void convert_keywords(Token* tok) {
+    for (Token* t = tok; t->kind != TK_EOF; t = t->next) {
+        if (equal(t, "return")) t->kind = TK_KEYWORD;
+    }
+}
+
 Token* tokenize(char* p) {
     current_input = p;
     Token head;
@@ -71,6 +81,7 @@ Token* tokenize(char* p) {
             cur->len = p - q;
             continue;
         }
+        // identifier or keyword
         if (is_ident_fst(*p)) {
             char* start = p;
             do {
@@ -82,5 +93,6 @@ Token* tokenize(char* p) {
         error_at(p, "Could not tokenize");
     }
     new_token(TK_EOF, cur, p, 0);
+    convert_keywords(head.next);
     return head.next;
 }

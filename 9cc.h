@@ -5,6 +5,7 @@ void error_at(char* loc, char* fmt, ...);
 typedef enum {
     TK_RESERVED,
     TK_IDENT,
+    TK_KEYWORD,
     TK_NUM,
     TK_EOF,
 } TokenKind;
@@ -39,6 +40,7 @@ typedef enum {
     ND_LT,      // <=
     ND_LE,      // <
     ND_ASSIGN,  // =
+    ND_RETURN,  // return statement
     ND_LVAR     // local variable
 } NodeKind;
 

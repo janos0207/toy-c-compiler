@@ -43,4 +43,8 @@ assert 5 "a = 2; b = 3; a+b;";
 assert 2 "a = b = 1; a + b;"
 assert 1 "foo = 1; foo;"
 assert 6 "a_b = 2; c12 = 3; a_b*c12;"
+assert 1 "return 1; 2; 3;"
+assert 2 "1; return 2; 3;"
+assert 3 "1; 2; return 3;"
+assert 1 "retur = 1; retur;"
 echo OK
