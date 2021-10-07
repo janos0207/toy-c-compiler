@@ -91,6 +91,7 @@ Node* new_node_lvar() {}
 
 void program();
 Node* stmt();
+Node* block();
 Node* expr();
 Node* assign();
 Node* equality();
@@ -115,6 +116,7 @@ void program() {
 
 // stmt = expr ";"
 //      | "return" expr ";"
+//      | "{" block
 Node* stmt() {
     Node* node;
     if (consume("return")) {
@@ -122,8 +124,24 @@ Node* stmt() {
         expect(";");
         return node;
     }
+    if (consume("{")) {
+        return block();
+    }
+
     node = expr();
     expect(";");
+    return node;
+}
+
+// block = stmt* "}"
+Node* block() {
+    Node* node = new_node(ND_BLOCK, NULL, NULL);
+    Node** body = (Node**)calloc(100, sizeof(Node*));
+
+    int i = 0;
+    while (!consume("}")) body[i++] = stmt();
+
+    node->body = body;
     return node;
 }
 

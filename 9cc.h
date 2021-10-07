@@ -41,6 +41,7 @@ typedef enum {
     ND_LE,      // <
     ND_ASSIGN,  // =
     ND_RETURN,  // return statement
+    ND_BLOCK,   // { ... }
     ND_LVAR     // local variable
 } NodeKind;
 
@@ -50,8 +51,9 @@ struct Node {
     NodeKind kind;
     Node* lhs;
     Node* rhs;
-    int val;    // only for ND_NUM case
-    LVar* var;  // only for ND_LVAR case
+    int val;      // only for ND_NUM case
+    LVar* var;    // only for ND_LVAR case
+    Node** body;  // only for ND_BLOCK
 };
 
 Token* tokenize(char* p);

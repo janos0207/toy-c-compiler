@@ -42,6 +42,12 @@ void gen_stmt(Node* node) {
             printf("  mov [rax], rdi\n");
             printf("  push rdi\n");
             return;
+        case ND_BLOCK:
+            for (int i = 0; node->body[i]; i++) {
+                gen_stmt(node->body[i]);
+                printf("  pop rax\n");
+            }
+            return;
         case ND_RETURN:
             gen_stmt(node->lhs);
             printf("  pop rax\n");
