@@ -114,7 +114,7 @@ void program() {
     f_locals = locals;
 }
 
-// stmt = expr ";"
+// stmt = expr? ";"
 //      | "return" expr ";"
 //      | "{" block
 Node* stmt() {
@@ -128,6 +128,11 @@ Node* stmt() {
         return block();
     }
 
+    if (consume(";")) {
+        node = new_node(ND_BLOCK, NULL, NULL);
+        node->body = (Node**)calloc(1, sizeof(Node*));
+        return node;
+    }
     node = expr();
     expect(";");
     return node;
