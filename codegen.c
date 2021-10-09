@@ -23,6 +23,11 @@ void assign_lvar_offsets() {
     stack_size = align_to(offset, 16);
 }
 
+int count() {
+    static int i = 0;
+    return i++;
+}
+
 void gen_stmt(Node* node) {
     switch (node->kind) {
         case ND_NUM:
@@ -47,7 +52,21 @@ void gen_stmt(Node* node) {
                 gen_stmt(node->body[i]);
                 printf("  pop rax\n");
             }
+            printf("  push rax\n");
             return;
+        case ND_IF: {
+            int c = count();
+            gen_stmt(node->cond);
+            printf("  pop rax\n");
+            printf("  cmp rax, 0\n");
+            printf("  je .L.else.%d\n", c);
+            gen_stmt(node->then);
+            printf("  jmp .L.end.%d\n", c);
+            printf(".L.else.%d:\n", c);
+            if (node->els) gen_stmt(node->els);
+            printf(".L.end.%d:\n", c);
+            return;
+        }
         case ND_RETURN:
             gen_stmt(node->lhs);
             printf("  pop rax\n");

@@ -116,6 +116,7 @@ void program() {
 
 // stmt = expr? ";"
 //      | "return" expr ";"
+//      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "{" block
 Node* stmt() {
     Node* node;
@@ -124,6 +125,20 @@ Node* stmt() {
         expect(";");
         return node;
     }
+
+    if (consume("if")) {
+        node = new_node(ND_IF, NULL, NULL);
+        expect("(");
+        node->cond = expr();
+        expect(")");
+        node->then = stmt();
+        if (consume("else"))
+            node->els = stmt();
+        else
+            node->els = NULL;
+        return node;
+    }
+
     if (consume("{")) {
         return block();
     }
