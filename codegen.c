@@ -67,6 +67,25 @@ void gen_stmt(Node* node) {
             printf(".L.end.%d:\n", c);
             return;
         }
+        case ND_FOR: {
+            int c = count();
+            if (node->init) {
+                gen_stmt(node->init);
+            }
+            printf(".L.begin.%d:\n", c);
+            if (node->cond) {
+                gen_stmt(node->cond);
+                printf("  cmp rax, 0\n");
+                printf("  je .L.end.%d\n", c);
+            }
+            gen_stmt(node->then);
+            if (node->inc) {
+                gen_stmt(node->inc);
+            }
+            printf("  jmp .L.begin.%d\n", c);
+            printf(".L.end.%d:\n", c);
+            return;
+        }
         case ND_RETURN:
             gen_stmt(node->lhs);
             printf("  pop rax\n");

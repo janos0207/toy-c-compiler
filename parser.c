@@ -117,6 +117,7 @@ void program() {
 // stmt = expr? ";"
 //      | "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
+//      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //      | "{" block
 Node* stmt() {
     Node* node;
@@ -136,6 +137,25 @@ Node* stmt() {
             node->els = stmt();
         else
             node->els = NULL;
+        return node;
+    }
+
+    if (consume("for")) {
+        node = new_node(ND_FOR, NULL, NULL);
+        expect("(");
+        if (!consume(";")) {
+            node->init = expr();
+            expect(";");
+        }
+        if (!consume(";")) {
+            node->cond = expr();
+            expect(";");
+        }
+        if (!consume(")")) {
+            node->inc = expr();
+            expect(")");
+        }
+        node->then = stmt();
         return node;
     }
 
