@@ -118,6 +118,7 @@ void program() {
 //      | "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//      | "while" "(" expr ")" strmt
 //      | "{" block
 Node* stmt() {
     Node* node;
@@ -155,6 +156,15 @@ Node* stmt() {
             node->inc = expr();
             expect(")");
         }
+        node->then = stmt();
+        return node;
+    }
+
+    if (consume("while")) {
+        node = new_node(ND_FOR, NULL, NULL);
+        expect("(");
+        node->cond = expr();
+        expect(")");
         node->then = stmt();
         return node;
     }

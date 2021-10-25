@@ -41,7 +41,7 @@ typedef enum {
     ND_LE,      // <
     ND_ASSIGN,  // =
     ND_IF,      // if statement
-    ND_FOR,     // for statement
+    ND_FOR,     // for statement & while statement
     ND_RETURN,  // return statement
     ND_BLOCK,   // { ... }
     ND_LVAR     // local variable
