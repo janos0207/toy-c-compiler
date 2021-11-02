@@ -40,6 +40,8 @@ typedef enum {
     ND_LT,      // <=
     ND_LE,      // <
     ND_ASSIGN,  // =
+    ND_ADDR,    // &
+    ND_DEREF,   // *
     ND_IF,      // if statement
     ND_FOR,     // for statement & while statement
     ND_RETURN,  // return statement

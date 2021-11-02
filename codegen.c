@@ -2,13 +2,23 @@
 
 #include "9cc.h"
 
-void gen_lval(Node* node) {
-    if (node->kind != ND_LVAR)
-        error("the left side value of assignment is not a variable");
+void gen_stmt(Node* node);
 
-    printf("  mov rax, rbp\n");
-    printf("  sub rax, %d\n", node->var->offset);
-    printf("  push rax\n");
+void gen_lval(Node* node) {
+    switch (node->kind) {
+        case ND_LVAR:
+            printf("  mov rax, rbp\n");
+            printf("  sub rax, %d\n", node->var->offset);
+            printf("  push rax\n");
+            return;
+        case ND_DEREF:
+            gen_stmt(node->lhs);
+            return;
+        default:
+            fprintf(stderr,
+                    "the left side value of assignment is not a variable");
+            return;
+    }
 }
 
 // Round up `n` to the nearest multiple of `align`
@@ -38,6 +48,15 @@ void gen_stmt(Node* node) {
             printf("  pop rax\n");
             printf("  mov rax, [rax]\n");
             printf("  push rax\n");
+            return;
+        case ND_DEREF:
+            gen_stmt(node->lhs);
+            printf("  pop rax\n");
+            printf("  mov rax, [rax]\n");
+            printf("  push rax\n");
+            return;
+        case ND_ADDR:
+            gen_lval(node->lhs);
             return;
         case ND_ASSIGN:
             gen_lval(node->lhs);
