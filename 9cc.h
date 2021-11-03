@@ -51,8 +51,11 @@ typedef enum {
 
 typedef struct Node Node;
 
+typedef struct Type Type;
+
 struct Node {
     NodeKind kind;
+    Type* ty;
     Node* lhs;
     Node* rhs;
     int val;      // only for ND_NUM case
@@ -66,6 +69,21 @@ struct Node {
     Node* init;
     Node* inc;
 };
+
+typedef enum {
+    TY_INT,
+    TY_PTR,
+} TypeKind;
+
+struct Type {
+    TokenKind kind;
+    Type* base;
+};
+
+extern Type* ty_int;
+
+bool is_integer(Type* ty);
+void add_type(Node* node);
 
 Token* tokenize(char* p);
 void parse(Token* t);

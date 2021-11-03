@@ -87,6 +87,58 @@ Node* new_node_num(int val) {
     return node;
 }
 
+static Node* new_add(Node* lhs, Node* rhs) {
+    add_type(lhs);
+    add_type(rhs);
+
+    // num + num
+    if (is_integer(lhs->ty) && is_integer(rhs->ty)) {
+        return new_node(ND_ADD, lhs, rhs);
+    }
+
+    if (lhs->ty->base && rhs->ty->base) {
+        fprintf(stderr, "parser: invalid operator");
+    }
+
+    // `num + ptr` -> `ptr + num`
+    if (rhs->ty->base) {
+        Node* tmp = lhs;
+        lhs = rhs;
+        rhs = tmp;
+    }
+
+    // ptr + num, remember p + n means p + sizeof(*p)*n
+    rhs = new_node(ND_MUL, rhs, new_node_num(8));
+    return new_node(ND_ADD, lhs, rhs);
+}
+
+static Node* new_sub(Node* lhs, Node* rhs) {
+    add_type(lhs);
+    add_type(rhs);
+
+    // num + num
+    if (is_integer(lhs->ty) && is_integer(rhs->ty)) {
+        return new_node(ND_SUB, lhs, rhs);
+    }
+
+    // ptr - num
+    if (lhs->ty->base && is_integer(rhs->ty)) {
+        rhs = new_node(ND_MUL, rhs, new_node_num(8));
+        add_type(rhs);
+        Node* node = new_node(ND_SUB, lhs, rhs);
+        node->ty = lhs->ty;
+        return node;
+    }
+    // ptr - ptr, which returns how many elements are between the two
+    if (lhs->ty->base && rhs->ty->base) {
+        Node* node = new_node(ND_SUB, lhs, rhs);
+        node->ty = ty_int;
+        return new_node(ND_DIV, node, new_node_num(8));
+    }
+
+    fprintf(stderr, "TypeError: invalid operator");
+}
+
 Node* new_node_lvar() {}
 
 void program();
@@ -109,7 +161,11 @@ void parse(Token* t) {
 // program = stmt*
 void program() {
     int i = 0;
-    while (!at_eof()) code[i++] = stmt();
+    while (!at_eof()) {
+        code[i] = stmt();
+        add_type(code[i]);
+        i++;
+    }
     code[i] = NULL;
     f_locals = locals;
 }
@@ -243,9 +299,9 @@ Node* add() {
 
     for (;;) {
         if (consume("+"))
-            node = new_node(ND_ADD, node, mul());
+            node = new_add(node, mul());
         else if (consume("-"))
-            node = new_node(ND_SUB, node, mul());
+            node = new_sub(node, mul());
         else
             return node;
     }
