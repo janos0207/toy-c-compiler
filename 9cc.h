@@ -2,6 +2,8 @@
 
 void error_at(char* loc, char* fmt, ...);
 
+typedef struct Type Type;
+
 typedef enum {
     TK_RESERVED,
     TK_IDENT,
@@ -27,6 +29,7 @@ struct LVar {
     char* name;
     int len;
     int offset;
+    Type* ty;
 };
 
 typedef enum {
@@ -42,6 +45,7 @@ typedef enum {
     ND_ASSIGN,  // =
     ND_ADDR,    // &
     ND_DEREF,   // *
+    ND_DECL,    // declaration
     ND_IF,      // if statement
     ND_FOR,     // for statement & while statement
     ND_RETURN,  // return statement
@@ -50,8 +54,6 @@ typedef enum {
 } NodeKind;
 
 typedef struct Node Node;
-
-typedef struct Type Type;
 
 struct Node {
     NodeKind kind;
@@ -77,13 +79,15 @@ typedef enum {
 
 struct Type {
     TokenKind kind;
-    Type* base;
+    Type* base;   // Pointer
+    Token* name;  // Declaration
 };
 
 extern Type* ty_int;
 
 bool is_integer(Type* ty);
 void add_type(Node* node);
+Type* pointer_to(Type* base);
 
 Token* tokenize(char* p);
 void parse(Token* t);

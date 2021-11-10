@@ -18,12 +18,22 @@ LVar* find_var() {
     return NULL;
 }
 
-LVar* new_lvar(char* name) {
+LVar* new_lvar(char* name, Type* ty) {
     LVar* var = calloc(1, sizeof(LVar));
     var->name = name;
+    var->ty = ty;
     var->next = locals;
     locals = var;
     return var;
+}
+
+static char* get_ident() {
+    if (token->kind != TK_IDENT) {
+        fprintf(stderr, "expected an identifier: %s\n",
+                strndup(token->str, token->len));
+        exit(1);
+    }
+    return strndup(token->str, token->len);
 }
 
 bool consume(char* op) {
@@ -43,7 +53,8 @@ Node* consume_ident() {
     }
     LVar* var = find_var();
     if (!var) {
-        var = new_lvar(strndup(token->str, token->len));
+        fprintf(stderr, "NotFound Error %s\n", strndup(token->str, token->len));
+        exit(1);
     }
 
     Node* node = calloc(1, sizeof(Node));
@@ -139,7 +150,11 @@ static Node* new_sub(Node* lhs, Node* rhs) {
     fprintf(stderr, "TypeError: invalid operator");
 }
 
-Node* new_node_lvar() {}
+Node* new_node_lvar(LVar* var) {
+    Node* node = new_node(ND_LVAR, NULL, NULL);
+    node->var = var;
+    return node;
+}
 
 void program();
 Node* stmt();
@@ -158,7 +173,7 @@ void parse(Token* t) {
     program();
 }
 
-// program = stmt*
+// program = (declaration | stmt)*
 void program() {
     int i = 0;
     while (!at_eof()) {
@@ -170,7 +185,49 @@ void program() {
     f_locals = locals;
 }
 
+// declarator = "*" ident
+static Type* declarator(Type* ty) {
+    while (consume("*")) {
+        ty = pointer_to(ty);
+    }
+    if (token->kind != TK_IDENT) {
+        fprintf(stderr, "expected a variable name: %s\n",
+                strndup(token->str, token->len));
+    }
+    ty->name = token;
+    return ty;
+}
+
+// declaration
+// = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
+static Node* declaration(Type* base_ty) {
+    Node* node = new_node(ND_BLOCK, NULL, NULL);
+    Node** body = (Node**)calloc(100, sizeof(Node*));
+    int i = 0, j = 0;
+
+    while (!consume(";")) {
+        if (i > 0) {
+            expect(",");
+        }
+        Type* ty = declarator(base_ty);
+        LVar* var = new_lvar(get_ident(), ty);
+        token = token->next;
+
+        if (!consume("=")) {
+            continue;
+        }
+
+        Node* lhs = new_node_lvar(var);
+        Node* rhs = assign();
+        body[j++] = new_node(ND_ASSIGN, lhs, rhs);
+    }
+
+    node->body = body;
+    return node;
+}
+
 // stmt = expr? ";"
+//      | "int" declaration
 //      | "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
@@ -178,6 +235,11 @@ void program() {
 //      | "{" block
 Node* stmt() {
     Node* node;
+    if (consume("int")) {
+        node = declaration(ty_int);
+        return node;
+    }
+
     if (consume("return")) {
         node = new_node(ND_RETURN, expr(), NULL);
         expect(";");

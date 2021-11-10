@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "9cc.h"
 
@@ -36,25 +37,27 @@ void add_type(Node *node) {
         case ND_MUL:
         case ND_DIV:
         case ND_ASSIGN:
-            node->ty = node->rhs->ty;
+            node->ty = node->lhs->ty;
             return;
         case ND_EQ:
         case ND_NE:
         case ND_LT:
         case ND_LE:
-        case ND_LVAR:
         case ND_NUM:
             node->ty = ty_int;
+            return;
+        case ND_LVAR:
+            node->ty = node->var->ty;
             return;
         case ND_ADDR:
             node->ty = pointer_to(node->lhs->ty);
             return;
         case ND_DEREF:
-            if (node->lhs->ty->kind == TY_PTR) {
-                node->ty = node->lhs->ty->base;
-            } else {
-                node->ty = ty_int;
+            if (node->lhs->ty->kind != TY_PTR) {
+                fprintf(stderr, "invalid pointer dereference");
+                exit(1);
             }
+            node->ty = node->lhs->ty->base;
             return;
     }
 }
