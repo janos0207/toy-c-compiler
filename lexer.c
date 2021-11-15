@@ -7,7 +7,7 @@
 
 #include "9cc.h"
 
-static char* current_input;
+char* current_input;
 
 void error_at(char* loc, char* fmt, ...) {
     va_list ap;
@@ -79,7 +79,7 @@ Token* tokenize(char* p) {
             p += 2;
             continue;
         }
-        if (strchr("+-*/()<>;={}&", *p)) {
+        if (strchr("+-*/()<>;={}&,", *p)) {
             cur = new_token(TK_RESERVED, cur, p++, 1);
             continue;
         }

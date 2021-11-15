@@ -93,6 +93,7 @@ Token* tokenize(char* p);
 void parse(Token* t);
 void codegen();
 
+char* current_input;
 Node* code[100];
 LVar* f_locals;
 int stack_size;

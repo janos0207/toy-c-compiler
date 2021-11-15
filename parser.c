@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +8,33 @@
 
 static Token* token;
 LVar* locals;
+
+void error_tok(Token* token, char* fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+
+    // find the line containing `loc`
+    char* line = token->str;
+    while (current_input < line && line[-1] != '\n') {
+        line--;
+    }
+
+    char* end = token->str;
+    while (*end && *end != '\n') {
+        end++;
+    }
+
+    // print out the target line
+    fprintf(stderr, "%.*s\n", (int)(end - line), line);
+
+    // show the error message
+    int pos = token->str - line - 1;
+    fprintf(stderr, "%*s", pos, " ");
+    fprintf(stderr, "^ ");
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
+}
 
 LVar* find_var() {
     for (LVar* var = locals; var; var = var->next) {
@@ -29,8 +57,7 @@ LVar* new_lvar(char* name, Type* ty) {
 
 static char* get_ident() {
     if (token->kind != TK_IDENT) {
-        fprintf(stderr, "expected an identifier: %s\n",
-                strndup(token->str, token->len));
+        error_tok(token, "expected an identifier");
         exit(1);
     }
     return strndup(token->str, token->len);
@@ -53,7 +80,8 @@ Node* consume_ident() {
     }
     LVar* var = find_var();
     if (!var) {
-        fprintf(stderr, "NotFound Error %s\n", strndup(token->str, token->len));
+        error_tok(token, "NotFound Error %s\n",
+                  strndup(token->str, token->len));
         exit(1);
     }
 
@@ -108,7 +136,7 @@ static Node* new_add(Node* lhs, Node* rhs) {
     }
 
     if (lhs->ty->base && rhs->ty->base) {
-        fprintf(stderr, "parser: invalid operator");
+        error_tok(token, "parser: invalid operator");
     }
 
     // `num + ptr` -> `ptr + num`
@@ -147,7 +175,7 @@ static Node* new_sub(Node* lhs, Node* rhs) {
         return new_node(ND_DIV, node, new_node_num(8));
     }
 
-    fprintf(stderr, "TypeError: invalid operator");
+    error_tok(token, "TypeError: invalid operator");
 }
 
 Node* new_node_lvar(LVar* var) {
@@ -191,8 +219,8 @@ static Type* declarator(Type* ty) {
         ty = pointer_to(ty);
     }
     if (token->kind != TK_IDENT) {
-        fprintf(stderr, "expected a variable name: %s\n",
-                strndup(token->str, token->len));
+        error_tok(token, "expected a variable name: %s\n",
+                  strndup(token->str, token->len));
     }
     ty->name = token;
     return ty;
@@ -206,7 +234,7 @@ static Node* declaration(Type* base_ty) {
     int i = 0, j = 0;
 
     while (!consume(";")) {
-        if (i > 0) {
+        if (i++ > 0) {
             expect(",");
         }
         Type* ty = declarator(base_ty);
