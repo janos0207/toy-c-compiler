@@ -3,12 +3,13 @@
 
 #include "9cc.h"
 
-Type *ty_int = &(Type){TY_INT};
+Type *ty_int = &(Type){TY_INT, 8};
 
 bool is_integer(Type *ty) { return ty->kind == TY_INT; }
 
 Type *pointer_to(Type *base) {
     Type *ty = calloc(1, sizeof(Type));
+    ty->size = 8;
     ty->kind = TY_PTR;
     ty->base = base;
     return ty;

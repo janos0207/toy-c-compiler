@@ -147,7 +147,7 @@ static Node* new_add(Node* lhs, Node* rhs) {
     }
 
     // ptr + num, remember p + n means p + sizeof(*p)*n
-    rhs = new_node(ND_MUL, rhs, new_node_num(8));
+    rhs = new_node(ND_MUL, rhs, new_node_num(lhs->ty->base->size));
     return new_node(ND_ADD, lhs, rhs);
 }
 
@@ -162,7 +162,7 @@ static Node* new_sub(Node* lhs, Node* rhs) {
 
     // ptr - num
     if (lhs->ty->base && is_integer(rhs->ty)) {
-        rhs = new_node(ND_MUL, rhs, new_node_num(8));
+        rhs = new_node(ND_MUL, rhs, new_node_num(lhs->ty->base->size));
         add_type(rhs);
         Node* node = new_node(ND_SUB, lhs, rhs);
         node->ty = lhs->ty;
@@ -172,7 +172,7 @@ static Node* new_sub(Node* lhs, Node* rhs) {
     if (lhs->ty->base && rhs->ty->base) {
         Node* node = new_node(ND_SUB, lhs, rhs);
         node->ty = ty_int;
-        return new_node(ND_DIV, node, new_node_num(8));
+        return new_node(ND_DIV, node, new_node_num(lhs->ty->base->size));
     }
 
     error_tok(token, "TypeError: invalid operator");
@@ -227,7 +227,7 @@ static Type* declarator(Type* ty) {
 }
 
 // declaration
-// = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
+// = (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
 static Node* declaration(Type* base_ty) {
     Node* node = new_node(ND_BLOCK, NULL, NULL);
     Node** body = (Node**)calloc(100, sizeof(Node*));
@@ -428,8 +428,14 @@ Node* unary() {
     return primary();
 }
 
-// primary = num | ident | "(" expr ")"
+// primary = num | ident | "(" expr ")" | "sizeof" unary
 Node* primary() {
+    if (consume("sizeof")) {
+        Node* node = unary();
+        add_type(node);
+        return new_node_num(node->ty->size);
+    }
+
     if (consume("(")) {
         Node* node = expr();
         expect(")");

@@ -69,4 +69,10 @@ assert 2 "int x = 1; int y = 2; return *(&x + 1);"
 assert 1 "int x = 1; int y = 2; return *(&y - 1);"
 assert 2 "int x = 1; int y = 2; int z = 3; return &z - &x;"
 assert 2 "int x = 1; int* y = &x; *y = 2; return x;"
+assert 8 "int x; return sizeof(x);"
+assert 8 "int x; return sizeof x;"
+assert 8 "int *x; return sizeof(x);"
+assert 8 "int x = 1; return sizeof(x=2);"
+assert 1 "int x = 1; sizeof(x=2); return x;"
+
 echo OK

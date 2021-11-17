@@ -79,6 +79,7 @@ typedef enum {
 
 struct Type {
     TokenKind kind;
+    int size;     // sizeof() value
     Type* base;   // Pointer
     Token* name;  // Declaration
 };
