@@ -22,6 +22,8 @@ struct Token {
     int len;    // token length
 };
 
+void error_tok(Token* token, char* fmt, ...);
+
 typedef struct LVar LVar;
 
 struct LVar {
@@ -75,13 +77,15 @@ struct Node {
 typedef enum {
     TY_INT,
     TY_PTR,
+    TY_ARRAY,
 } TypeKind;
 
 struct Type {
-    TokenKind kind;
-    int size;     // sizeof() value
-    Type* base;   // Pointer
-    Token* name;  // Declaration
+    TypeKind kind;
+    int size;       // sizeof() value
+    Type* base;     // Pointer or Array
+    Token* name;    // Declaration
+    int array_len;  // Array
 };
 
 extern Type* ty_int;
@@ -89,6 +93,7 @@ extern Type* ty_int;
 bool is_integer(Type* ty);
 void add_type(Node* node);
 Type* pointer_to(Type* base);
+Type* array_of(Type* base, int len);
 
 Token* tokenize(char* p);
 void parse(Token* t);

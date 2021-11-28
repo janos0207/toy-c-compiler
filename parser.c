@@ -55,12 +55,12 @@ LVar* new_lvar(char* name, Type* ty) {
     return var;
 }
 
-static char* get_ident() {
-    if (token->kind != TK_IDENT) {
-        error_tok(token, "expected an identifier");
+static char* get_ident(Token* tok) {
+    if (tok->kind != TK_IDENT) {
+        error_tok(tok, "expected an identifier");
         exit(1);
     }
-    return strndup(token->str, token->len);
+    return strndup(tok->str, tok->len);
 }
 
 bool consume(char* op) {
@@ -184,6 +184,15 @@ Node* new_node_lvar(LVar* var) {
     return node;
 }
 
+static int get_number() {
+    if (token->kind != TK_NUM) {
+        error_tok(token, "expected a number");
+    }
+    int val = token->val;
+    token = token->next;
+    return val;
+}
+
 void program();
 Node* stmt();
 Node* block();
@@ -213,7 +222,19 @@ void program() {
     f_locals = locals;
 }
 
-// declarator = "*" ident
+// type-suffix = "[" num "]"
+//             | ε
+static Type* type_suffix(Type* ty) {
+    if (consume("[")) {
+        int size = get_number();
+        expect("]");
+        return array_of(ty, size);
+    }
+
+    return ty;
+}
+
+// declarator = "*" ident type-suffix
 static Type* declarator(Type* ty) {
     while (consume("*")) {
         ty = pointer_to(ty);
@@ -222,7 +243,11 @@ static Type* declarator(Type* ty) {
         error_tok(token, "expected a variable name: %s\n",
                   strndup(token->str, token->len));
     }
-    ty->name = token;
+    Token* token_tmp = token;
+    token = token->next;
+
+    ty = type_suffix(ty);
+    ty->name = token_tmp;
     return ty;
 }
 
@@ -238,8 +263,7 @@ static Node* declaration(Type* base_ty) {
             expect(",");
         }
         Type* ty = declarator(base_ty);
-        LVar* var = new_lvar(get_ident(), ty);
-        token = token->next;
+        LVar* var = new_lvar(get_ident(ty->name), ty);
 
         if (!consume("=")) {
             continue;

@@ -74,5 +74,12 @@ assert 8 "int x; return sizeof x;"
 assert 8 "int *x; return sizeof(x);"
 assert 8 "int x = 1; return sizeof(x=2);"
 assert 1 "int x = 1; sizeof(x=2); return x;"
+assert 3 "int x[2]; int *y=&x; *y=3; return *x;"
+assert 1 "int x, y[2]; *y=1; *y;"
+assert 1 "int x[2], y; *x=1; *x;"
+assert 1 "int x[2]; *x=1; *(x+1)=2; return *x;"
+assert 1 "int x[3]; *x=1; *(x+1)=2; *(x+2)=3; return *x;"
+assert 2 "int x[3]; *x=1; *(x+1)=2; *(x+2)=3; return *(x+1);"
+assert 3 "int x[3]; *x=1; *(x+1)=2; *(x+2)=3; return *(x+2);"
 
 echo OK

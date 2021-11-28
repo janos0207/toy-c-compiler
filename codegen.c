@@ -27,7 +27,7 @@ int align_to(int n, int align) { return (n + align - 1) / align * align; }
 void assign_lvar_offsets() {
     int offset = 0;
     for (LVar* var = f_locals; var; var = var->next) {
-        offset += 8;
+        offset += var->ty->size;
         var->offset = offset;
     }
     stack_size = align_to(offset, 16);
@@ -38,6 +38,24 @@ int count() {
     return i++;
 }
 
+static void load(Type* ty) {
+    if (ty->kind == TY_ARRAY) {
+        // The result of an evaluation of an array becomes the address of the
+        // array.
+        return;
+    }
+    printf("  pop rax\n");
+    printf("  mov rax, [rax]\n");
+    printf("  push rax\n");
+}
+
+static void store() {
+    printf("  pop rdi\n");
+    printf("  pop rax\n");
+    printf("  mov [rax], rdi\n");
+    printf("  push rdi\n");
+}
+
 void gen_stmt(Node* node) {
     switch (node->kind) {
         case ND_NUM:
@@ -45,15 +63,11 @@ void gen_stmt(Node* node) {
             return;
         case ND_LVAR:
             gen_lval(node);
-            printf("  pop rax\n");
-            printf("  mov rax, [rax]\n");
-            printf("  push rax\n");
+            load(node->ty);
             return;
         case ND_DEREF:
             gen_stmt(node->lhs);
-            printf("  pop rax\n");
-            printf("  mov rax, [rax]\n");
-            printf("  push rax\n");
+            load(node->ty);
             return;
         case ND_ADDR:
             gen_lval(node->lhs);
@@ -61,10 +75,7 @@ void gen_stmt(Node* node) {
         case ND_ASSIGN:
             gen_lval(node->lhs);
             gen_stmt(node->rhs);
-            printf("  pop rdi\n");
-            printf("  pop rax\n");
-            printf("  mov [rax], rdi\n");
-            printf("  push rdi\n");
+            store();
             return;
         case ND_BLOCK:
             for (int i = 0; node->body[i]; i++) {
