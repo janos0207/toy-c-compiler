@@ -81,5 +81,11 @@ assert 1 "int x[2]; *x=1; *(x+1)=2; return *x;"
 assert 1 "int x[3]; *x=1; *(x+1)=2; *(x+2)=3; return *x;"
 assert 2 "int x[3]; *x=1; *(x+1)=2; *(x+2)=3; return *(x+1);"
 assert 3 "int x[3]; *x=1; *(x+1)=2; *(x+2)=3; return *(x+2);"
+assert 0 "int x[2][3]; int *y=x; *y=0; return **x;"
+assert 1 "int x[2][3]; int *y=x; *(y+1)=1; return *(*x+1);"
+assert 1 "int x[2][3]; int *y=x; *(y+2)=1; return *(*x+2);"
+assert 1 "int x[2][3]; int *y=x; *(y+3)=1; return **(x+1);"
+assert 1 "int x[2][3]; int *y=x; *(y+4)=1; return *(*(x+1)+1);"
+assert 1 "int x[2][3]; int *y=x; *(y+5)=1; return *(*(x+1)+2);"
 
 echo OK

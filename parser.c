@@ -222,12 +222,13 @@ void program() {
     f_locals = locals;
 }
 
-// type-suffix = "[" num "]"
+// type-suffix = "[" num "]" type-suffix
 //             | ε
 static Type* type_suffix(Type* ty) {
     if (consume("[")) {
         int size = get_number();
         expect("]");
+        ty = type_suffix(ty);
         return array_of(ty, size);
     }
 
